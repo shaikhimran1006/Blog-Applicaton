@@ -18,11 +18,27 @@ let users = [
   }
 ];
 
+// Available categories
+const categories = [
+  'Technology',
+  'Health & Medical',
+  'Business',
+  'Lifestyle',
+  'Education',
+  'Entertainment',
+  'Sports',
+  'Science',
+  'Travel',
+  'Food & Cooking',
+  'Other'
+];
+
 let posts = [
   {
     id: 1,
     title: 'Welcome to the Blog',
     content: 'This is your first blog post. Start creating amazing content!',
+    category: 'Other',
     author: 'admin',
     authorId: 1,
     createdAt: new Date().toISOString()
@@ -31,6 +47,7 @@ let posts = [
     id: 2,
     title: 'Getting Started with React',
     content: 'React is a powerful JavaScript library for building user interfaces. Let\'s explore its features...',
+    category: 'Technology',
     author: 'admin',
     authorId: 1,
     createdAt: new Date().toISOString()
@@ -156,12 +173,28 @@ app.get('/api/auth/me', authenticate, (req, res) => {
   });
 });
 
+// ============= CATEGORY ROUTES =============
+
+// GET all categories
+app.get('/api/categories', (req, res) => {
+  res.json(categories);
+});
+
 // ============= POST ROUTES =============
 
-// GET all posts
+// GET all posts (with optional category filter)
 app.get('/api/posts', (req, res) => {
+  const { category } = req.query;
+  
+  let filteredPosts = posts;
+  
+  // Filter by category if provided
+  if (category && category !== 'All') {
+    filteredPosts = posts.filter(p => p.category === category);
+  }
+  
   // Return posts in reverse chronological order
-  const sortedPosts = [...posts].sort((a, b) => 
+  const sortedPosts = [...filteredPosts].sort((a, b) => 
     new Date(b.createdAt) - new Date(a.createdAt)
   );
   res.json(sortedPosts);
@@ -181,16 +214,21 @@ app.get('/api/posts/:id', (req, res) => {
 
 // POST create new post (protected)
 app.post('/api/posts', authenticate, (req, res) => {
-  const { title, content } = req.body;
+  const { title, content, category } = req.body;
   
   if (!title || !content) {
     return res.status(400).json({ error: 'Title and content are required' });
+  }
+  
+  if (!category || !categories.includes(category)) {
+    return res.status(400).json({ error: 'Valid category is required' });
   }
   
   const newPost = {
     id: nextPostId++,
     title,
     content,
+    category,
     author: req.user.username,
     authorId: req.user.id,
     createdAt: new Date().toISOString()
@@ -203,7 +241,7 @@ app.post('/api/posts', authenticate, (req, res) => {
 // PUT update post (protected)
 app.put('/api/posts/:id', authenticate, (req, res) => {
   const postId = parseInt(req.params.id);
-  const { title, content } = req.body;
+  const { title, content, category } = req.body;
   
   const postIndex = posts.findIndex(p => p.id === postId);
   
@@ -220,10 +258,15 @@ app.put('/api/posts/:id', authenticate, (req, res) => {
     return res.status(400).json({ error: 'Title and content are required' });
   }
   
+  if (category && !categories.includes(category)) {
+    return res.status(400).json({ error: 'Invalid category' });
+  }
+  
   posts[postIndex] = {
     ...posts[postIndex],
     title,
     content,
+    ...(category && { category }),
     updatedAt: new Date().toISOString()
   };
   
@@ -248,14 +291,20 @@ app.delete('/api/posts/:id', authenticate, (req, res) => {
   res.json({ message: 'Post deleted successfully' });
 });
 
-// Search posts
+// Search posts (with optional category filter)
 app.get('/api/posts/search/:query', (req, res) => {
   const query = req.params.query.toLowerCase();
+  const { category } = req.query;
   
-  const filteredPosts = posts.filter(post => 
+  let filteredPosts = posts.filter(post => 
     post.title.toLowerCase().includes(query) || 
     post.content.toLowerCase().includes(query)
   );
+  
+  // Filter by category if provided
+  if (category && category !== 'All') {
+    filteredPosts = filteredPosts.filter(p => p.category === category);
+  }
   
   res.json(filteredPosts);
 });

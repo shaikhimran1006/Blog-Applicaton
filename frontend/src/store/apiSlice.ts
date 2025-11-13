@@ -5,6 +5,7 @@ export interface Post {
   id: number
   title: string
   content: string
+  category: string
   author: string
   authorId: number
   createdAt: string
@@ -74,9 +75,14 @@ export const apiSlice = createApi({
       providesTags: ['User'],
     }),
 
+    // Category endpoints
+    getCategories: builder.query<string[], void>({
+      query: () => '/categories',
+    }),
+
     // Post endpoints
-    getPosts: builder.query<Post[], void>({
-      query: () => '/posts',
+    getPosts: builder.query<Post[], string | void>({
+      query: (category) => category ? `/posts?category=${category}` : '/posts',
       providesTags: ['Post'],
     }),
     getPost: builder.query<Post, number>({
@@ -106,8 +112,11 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Post'],
     }),
-    searchPosts: builder.query<Post[], string>({
-      query: (query) => `/posts/search/${query}`,
+    searchPosts: builder.query<Post[], { query: string; category?: string }>({
+      query: ({ query, category }) => 
+        category 
+          ? `/posts/search/${query}?category=${category}` 
+          : `/posts/search/${query}`,
     }),
   }),
 })
@@ -117,6 +126,7 @@ export const {
   useRegisterMutation,
   useLogoutMutation,
   useGetCurrentUserQuery,
+  useGetCategoriesQuery,
   useGetPostsQuery,
   useGetPostQuery,
   useCreatePostMutation,

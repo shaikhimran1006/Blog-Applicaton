@@ -1,10 +1,15 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useGetPostsQuery } from '../store/apiSlice'
+import { useGetPostsQuery, useGetCategoriesQuery } from '../store/apiSlice'
 
 function PostList() {
-  const { data: posts, isLoading, error } = useGetPostsQuery()
+  const [selectedCategory, setSelectedCategory] = useState<string>('All')
   const [searchQuery, setSearchQuery] = useState('')
+  
+  const { data: categories } = useGetCategoriesQuery()
+  const { data: posts, isLoading, error } = useGetPostsQuery(
+    selectedCategory === 'All' ? undefined : selectedCategory
+  )
 
   if (isLoading) return <div className="loading">Loading posts...</div>
 
@@ -31,14 +36,33 @@ function PostList() {
         </Link>
       </div>
 
-      <div className="search-container">
-        <input
-          type="text"
-          placeholder="Search posts..."
-          className="search-input"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+      <div className="filter-container">
+        <div className="form-group">
+          <label htmlFor="category-filter">Filter by Category:</label>
+          <select
+            id="category-filter"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="category-select"
+          >
+            <option value="All">All Categories</option>
+            {categories?.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="search-container">
+          <input
+            type="text"
+            placeholder="Search posts..."
+            className="search-input"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
 
       {filteredPosts && filteredPosts.length > 0 ? (
@@ -50,10 +74,12 @@ function PostList() {
               className="post-card-link"
             >
               <article className="card">
+                <div className="post-category-badge">{post.category}</div>
                 <h3 className="card-title">{post.title}</h3>
                 <div className="card-meta">
                   <span>✍️ {post.author}</span>
                   <span>📅 {new Date(post.createdAt).toLocaleDateString()}</span>
+                  <span>🕒 {new Date(post.createdAt).toLocaleTimeString()}</span>
                 </div>
                 <p className="post-excerpt">{post.content}</p>
               </article>

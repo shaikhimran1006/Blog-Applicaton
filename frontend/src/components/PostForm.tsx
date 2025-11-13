@@ -4,6 +4,7 @@ import {
   useCreatePostMutation,
   useUpdatePostMutation,
   useGetPostQuery,
+  useGetCategoriesQuery,
 } from '../store/apiSlice'
 
 function PostForm() {
@@ -13,7 +14,9 @@ function PostForm() {
 
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [category, setCategory] = useState('')
 
+  const { data: categories } = useGetCategoriesQuery()
   const { data: existingPost } = useGetPostQuery(Number(id), {
     skip: !isEditMode,
   })
@@ -27,13 +30,17 @@ function PostForm() {
     if (isEditMode && existingPost) {
       setTitle(existingPost.title)
       setContent(existingPost.content)
+      setCategory(existingPost.category)
+    } else if (categories && categories.length > 0) {
+      // Set default category for new posts
+      setCategory(categories[0])
     }
-  }, [isEditMode, existingPost])
+  }, [isEditMode, existingPost, categories])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!title.trim() || !content.trim()) {
+    if (!title.trim() || !content.trim() || !category) {
       alert('Please fill in all fields')
       return
     }
@@ -42,10 +49,10 @@ function PostForm() {
       if (isEditMode) {
         await updatePost({
           id: Number(id),
-          data: { title, content },
+          data: { title, content, category },
         }).unwrap()
       } else {
-        await createPost({ title, content }).unwrap()
+        await createPost({ title, content, category }).unwrap()
       }
       navigate('/')
     } catch (error) {
@@ -79,6 +86,23 @@ function PostForm() {
             placeholder="Enter post title..."
             required
           />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="category">Category</label>
+          <select
+            id="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            required
+          >
+            <option value="">Select a category</option>
+            {categories?.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="form-group">

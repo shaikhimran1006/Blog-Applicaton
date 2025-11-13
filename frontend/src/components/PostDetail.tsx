@@ -38,12 +38,14 @@ function PostDetail() {
     <div className="post-detail">
       <article className="card">
         <div className="post-header">
+          <div className="post-category-badge">{post.category}</div>
           <h1 className="post-title">{post.title}</h1>
           <div className="card-meta">
             <span>✍️ {post.author}</span>
             <span>📅 {new Date(post.createdAt).toLocaleDateString()}</span>
+            <span>🕒 {new Date(post.createdAt).toLocaleTimeString()}</span>
             {post.updatedAt && (
-              <span>🔄 Updated {new Date(post.updatedAt).toLocaleDateString()}</span>
+              <span>🔄 Updated {new Date(post.updatedAt).toLocaleDateString()} at {new Date(post.updatedAt).toLocaleTimeString()}</span>
             )}
           </div>
         </div>
